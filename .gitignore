@@ -1,0 +1,22 @@
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local credentials and overrides
+**/.env.local
+**/.env.*.local
+**/auth.json
+
+# PHP and Symfony generated files
+**/vendor/
+**/var/
+**/public/assets/
+**/public/bundles/
+**/.phpunit.cache/
+**/phpunit.xml
+
+# Temporary capture sources
+.screenshots/

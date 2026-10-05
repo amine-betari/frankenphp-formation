@@ -1,0 +1,42 @@
+name: frankenphp-symfony-lab
+
+services:
+  php-demo:
+    image: dunglas/frankenphp:1-php8.5-bookworm
+    network_mode: bridge
+    environment:
+      SERVER_NAME: :80
+    ports:
+      - "8282:80"
+    volumes:
+      - ./franken-test/public:/app/public:ro
+    tty: true
+
+  symfony-classic:
+    image: dunglas/frankenphp:1-php8.5-bookworm
+    network_mode: bridge
+    working_dir: /app
+    environment:
+      SERVER_NAME: :80
+      APP_ENV: dev
+      DEMO_MODE: classique
+    ports:
+      - "8384:80"
+    volumes:
+      - ./franken-symfony:/app
+    tty: true
+
+  symfony-worker:
+    image: dunglas/frankenphp:1-php8.5-bookworm
+    network_mode: bridge
+    working_dir: /app
+    environment:
+      SERVER_NAME: :80
+      APP_ENV: dev
+      DEMO_MODE: worker
+      FRANKENPHP_CONFIG: worker ./public/index.php 10
+    ports:
+      - "8385:80"
+    volumes:
+      - ./franken-symfony:/app
+    tty: true
