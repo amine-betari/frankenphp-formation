@@ -36,8 +36,8 @@ PHP, Composer, Symfony CLI et PHP-FPM ne sont pas requis sur la machine hôte.
 Cloner le dépôt puis se placer à sa racine :
 
 ```bash
-git clone URL_DU_DEPOT
-cd frankenphp-symfony-lab
+git clone https://github.com/amine-betari/frankenphp-formation.git
+cd frankenphp-formation
 ```
 
 Installer les dépendances Symfony avec Composer dans Docker :
