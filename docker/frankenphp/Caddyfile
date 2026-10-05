@@ -9,6 +9,11 @@
 {$SERVER_NAME:localhost} {
 	root * /app/public
 
+	log {
+		output stdout
+		format console
+	}
+
 	encode zstd br gzip
 
 	header {

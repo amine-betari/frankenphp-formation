@@ -8,6 +8,15 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class TestController
 {
+    #[Route('/demo/code-version', name: 'app_code_version', methods: ['GET'])]
+    public function codeVersion(): JsonResponse
+    {
+        return new JsonResponse([
+            'version' => 3,
+            'mode' => getenv('DEMO_MODE') ?: 'inconnu',
+        ]);
+    }
+
     #[Route('/health', name: 'app_health', methods: ['GET'])]
     public function health(): JsonResponse
     {

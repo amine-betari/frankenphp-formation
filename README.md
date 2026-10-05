@@ -170,9 +170,10 @@ Afficher les routes Symfony :
 docker compose exec symfony-classic php bin/console debug:router
 ```
 
-## Article associé
+## Articles associés
 
-[FrankenPHP avec Symfony 7.4 : mode classique, Worker et benchmark concret](https://www.abetari.com/frankenphp-avec-symfony-7-4-mode-classique-worker-et-benchmark-concret/)
+1. [FrankenPHP avec Symfony 7.4 : mode classique, Worker et benchmark concret](https://www.abetari.com/frankenphp-avec-symfony-7-4-mode-classique-worker-et-benchmark-concret/)
+2. [FrankenPHP avec Symfony : Caddyfile, logs, healthchecks et rechargement des Workers](https://www.abetari.com/frankenphp-avec-symfony-caddyfile-logs-healthchecks-et-rechargement-des-workers/)
 
 La suite de la série est organisée dans la [feuille de route](docs/ROADMAP.md).
 

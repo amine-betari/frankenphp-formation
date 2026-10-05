@@ -45,7 +45,12 @@ services:
       SERVER_NAME: :80
       APP_ENV: dev
       DEMO_MODE: worker
-      FRANKENPHP_CONFIG: worker ./public/index.php 10
+      FRANKENPHP_CONFIG: |
+        worker {
+          file ./public/index.php
+          num 10
+          watch
+        }
     ports:
       - "8385:80"
     volumes:

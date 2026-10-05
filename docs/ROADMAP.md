@@ -24,7 +24,8 @@ Chaque étape doit produire du code reproductible, des captures, des mesures et 
 
 ## Étape 3 — Worker mode en profondeur
 
-- [ ] Cycle de vie du Kernel Symfony
+- [x] Cycle de vie du Kernel Symfony
+- [x] Rechargement des Workers avec `watch`
 - [ ] Services avec état et `ResetInterface`
 - [ ] Connexions Doctrine persistantes
 - [ ] Redémarrage automatique et `MAX_REQUESTS`
