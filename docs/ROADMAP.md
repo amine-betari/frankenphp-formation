@@ -17,10 +17,10 @@ Chaque étape doit produire du code reproductible, des captures, des mesures et 
 ## Étape 2 — Docker et Caddy
 
 - [ ] Construire une image Docker dédiée
-- [ ] Ajouter un `Caddyfile` explicite
-- [ ] Comprendre les directives `php_server` et `worker`
+- [x] Ajouter un `Caddyfile` explicite
+- [x] Comprendre les directives `php_server` et `worker`
 - [ ] Séparer développement et production
-- [ ] Ajouter un healthcheck applicatif
+- [x] Ajouter un healthcheck applicatif
 
 ## Étape 3 — Worker mode en profondeur
 

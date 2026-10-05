@@ -9,6 +9,7 @@ Projet pédagogique pour découvrir FrankenPHP avec Symfony 7.4, comparer le mod
 ```text
 .
 ├── compose.yaml          # Les trois serveurs de démonstration
+├── docker/frankenphp/    # Configuration Caddy explicite
 ├── docs/images/          # Captures utilisées dans la documentation
 ├── franken-test/         # Application PHP minimale sans framework
 └── franken-symfony/      # Application Symfony 7.4 complète
@@ -77,6 +78,20 @@ docker compose exec symfony-classic \
 | Tableau de bord météo | Worker | <http://localhost:8385/weather> |
 | Compteur en mémoire | Classique | <http://localhost:8384/demo/compteur> |
 | Compteur en mémoire | Worker | <http://localhost:8385/demo/compteur> |
+| Santé Symfony | Classique | <http://localhost:8384/health> |
+| Santé Symfony | Worker | <http://localhost:8385/health> |
+
+## Configuration Caddy
+
+Le fichier [`docker/frankenphp/Caddyfile`](docker/frankenphp/Caddyfile) configure explicitement :
+
+- la racine publique `/app/public` ;
+- l’exécution PHP avec `php_server` ;
+- les compressions Zstandard, Brotli et Gzip ;
+- quelques en-têtes HTTP de sécurité ;
+- le mode Worker lorsque `FRANKENPHP_CONFIG` est défini.
+
+Chaque service possède également un healthcheck Docker qui appelle `/health` toutes les dix secondes.
 
 ## API Produits
 

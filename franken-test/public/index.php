@@ -15,6 +15,13 @@ if ($uri === '/') {
         'php' => PHP_VERSION,
         'status' => 'OK',
     ]);
+} elseif ($uri === '/health') {
+    header('Content-Type: application/json');
+
+    echo json_encode([
+        'status' => 'ok',
+        'application' => 'php-demo',
+    ]);
 } else {
     http_response_code(404);
     echo '<h1>404</h1>';

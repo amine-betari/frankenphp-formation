@@ -1,5 +1,12 @@
 name: frankenphp-symfony-lab
 
+x-healthcheck: &healthcheck
+  test: ["CMD", "php", "-r", "exit(false === @file_get_contents('http://localhost/health') ? 1 : 0);"]
+  interval: 10s
+  timeout: 3s
+  retries: 3
+  start_period: 10s
+
 services:
   php-demo:
     image: dunglas/frankenphp:1-php8.5-bookworm
@@ -10,6 +17,8 @@ services:
       - "8282:80"
     volumes:
       - ./franken-test/public:/app/public:ro
+      - ./docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
+    healthcheck: *healthcheck
     tty: true
 
   symfony-classic:
@@ -24,6 +33,8 @@ services:
       - "8384:80"
     volumes:
       - ./franken-symfony:/app
+      - ./docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
+    healthcheck: *healthcheck
     tty: true
 
   symfony-worker:
@@ -39,4 +50,6 @@ services:
       - "8385:80"
     volumes:
       - ./franken-symfony:/app
+      - ./docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
+    healthcheck: *healthcheck
     tty: true
