@@ -108,5 +108,9 @@ document.querySelector('#run').addEventListener('click', async event => {
     }
 });
 document.querySelector('#clear').addEventListener('click', reset);
+
+if (new URLSearchParams(window.location.search).has('autorun')) {
+    document.querySelector('#run').click();
+}
 </script>
 {% endblock %}

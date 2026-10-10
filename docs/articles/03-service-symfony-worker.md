@@ -74,6 +74,8 @@ En rechargeant l’API classique, `instance_service` change et `requetes_par_ins
 
 L’interface <http://localhost:8384/worker-lab> lance vingt appels sur chaque serveur et affiche :
 
+![Comparaison visuelle des modes classique et Worker](../images/worker-lab.png)
+
 - la durée mesurée par le navigateur ;
 - l’identifiant de l’instance du service ;
 - le nombre de requêtes traitées par cette instance ;
