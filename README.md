@@ -80,6 +80,7 @@ docker compose exec symfony-classic \
 | Compteur en mémoire | Worker | <http://localhost:8385/demo/compteur> |
 | Laboratoire service coûteux | Classique | <http://localhost:8384/worker-lab> |
 | Laboratoire service coûteux | Worker | <http://localhost:8385/worker-lab> |
+| Démonstration Mercure | Temps réel | <http://localhost:8384/mercure-demo> |
 | Santé Symfony | Classique | <http://localhost:8384/health> |
 | Santé Symfony | Worker | <http://localhost:8385/health> |
 
@@ -145,6 +146,16 @@ Mode Worker    : environ 1 800 requêtes/seconde
 ```
 
 Ces valeurs sont indicatives et dépendent du matériel, du mode debug et du nombre de workers.
+
+## Mercure en temps réel
+
+Le service `mercure` écoute sur le port `3001`. La page `/mercure-demo` ouvre une connexion SSE avec le Hub et permet à Symfony de publier un message reçu instantanément dans tous les onglets ouverts.
+
+```text
+Symfony publie → Hub Mercure distribue → EventSource reçoit
+```
+
+Ouvrir <http://localhost:8384/mercure-demo> dans deux onglets, puis publier un message dans l’un des deux. Cette démonstration est indépendante du mode Worker.
 
 ## Laboratoire Worker
 

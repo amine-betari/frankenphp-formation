@@ -1,0 +1,107 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Découvrir Mercure{% endblock %}
+
+{% block body %}
+<style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #f4f6fa; color: #172033; }
+    main { width: min(860px, calc(100% - 32px)); margin: 42px auto; }
+    h1 { margin-bottom: 8px; font-size: clamp(30px, 5vw, 46px); }
+    .intro { color: #667085; line-height: 1.6; }
+    .flow { margin: 24px 0; padding: 16px; border-radius: 12px; background: #eef4ff; color: #194185; font-weight: 700; text-align: center; }
+    .card { background: white; border: 1px solid #e2e7ef; border-radius: 16px; padding: 22px; box-shadow: 0 10px 30px rgba(16, 24, 40, .06); }
+    form { display: flex; gap: 10px; }
+    input { flex: 1; min-width: 0; border: 1px solid #cfd6e2; border-radius: 10px; padding: 12px; font: inherit; }
+    button { border: 0; border-radius: 10px; padding: 12px 18px; color: white; background: #2563eb; font: inherit; font-weight: 750; cursor: pointer; }
+    .connection { display: flex; align-items: center; gap: 8px; margin: 18px 0; color: #667085; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; background: #f59e0b; }
+    .connected .dot { background: #12b76a; }
+    .error .dot { background: #f04438; }
+    .messages { display: grid; gap: 10px; margin-top: 20px; }
+    .message { padding: 14px; border-left: 4px solid #7c3aed; border-radius: 8px; background: #f9f5ff; }
+    .message small { display: block; margin-top: 5px; color: #667085; }
+    .empty { padding: 28px; color: #667085; text-align: center; border: 1px dashed #d0d5dd; border-radius: 10px; }
+    code { color: #6941c6; }
+    @media (max-width: 600px) { form { flex-direction: column; } }
+</style>
+
+<main>
+    <h1>Mercure en temps réel</h1>
+    <p class="intro">Ouvre cette page dans deux onglets. Envoie un message dans le premier : il apparaîtra immédiatement dans les deux, sans actualisation.</p>
+
+    <div class="flow">Symfony publie → Hub Mercure distribue → EventSource reçoit</div>
+
+    <section class="card">
+        <form id="message-form">
+            <input id="message" maxlength="200" required placeholder="Ex. Bonjour depuis Symfony !" autocomplete="off">
+            <button type="submit">Publier</button>
+        </form>
+
+        <div id="connection" class="connection">
+            <span class="dot"></span>
+            <span>Connexion au Hub Mercure…</span>
+        </div>
+
+        <div id="messages" class="messages">
+            <div class="empty">Aucun événement reçu pour le moment.</div>
+        </div>
+    </section>
+</main>
+
+<script>
+const mercureUrl = {{ mercure(topic)|json_encode|raw }};
+const eventSource = new EventSource(mercureUrl);
+const connection = document.querySelector('#connection');
+const messages = document.querySelector('#messages');
+
+eventSource.onopen = () => {
+    connection.className = 'connection connected';
+    connection.querySelector('span:last-child').textContent = 'Connecté au Hub Mercure';
+};
+
+eventSource.onerror = () => {
+    connection.className = 'connection error';
+    connection.querySelector('span:last-child').textContent = 'Connexion perdue — nouvelle tentative automatique…';
+};
+
+function receiveEvent(event) {
+    const data = JSON.parse(event.data);
+    messages.querySelector('.empty')?.remove();
+
+    const article = document.createElement('article');
+    article.className = 'message';
+    const text = document.createElement('strong');
+    text.textContent = data.message;
+    const metadata = document.createElement('small');
+    metadata.textContent = `Reçu à ${data.sent_at} · événement ${data.event_id}`;
+    article.append(text, metadata);
+    messages.prepend(article);
+}
+
+eventSource.onmessage = receiveEvent;
+
+document.querySelector('#message-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const input = document.querySelector('#message');
+    const button = event.currentTarget.querySelector('button');
+    button.disabled = true;
+
+    try {
+        const response = await fetch('/api/mercure/publish', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: input.value}),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+        input.value = '';
+        input.focus();
+    } catch (error) {
+        alert(`Publication impossible : ${error.message}`);
+    } finally {
+        button.disabled = false;
+    }
+});
+</script>
+{% endblock %}

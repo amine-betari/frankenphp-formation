@@ -8,6 +8,27 @@ x-healthcheck: &healthcheck
   start_period: 10s
 
 services:
+  mercure:
+    image: dunglas/mercure
+    network_mode: bridge
+    environment:
+      SERVER_NAME: :80
+      MERCURE_PUBLISHER_JWT_KEY: mercure-local-development-secret
+      MERCURE_SUBSCRIBER_JWT_KEY: mercure-local-development-secret
+      MERCURE_TRUSTED_ISSUERS: https://frankenphp.local
+      MERCURE_EXTRA_DIRECTIVES: |
+        anonymous
+        cors_origins http://localhost:8384
+        resource_identifier http://localhost:3001/.well-known/mercure
+    ports:
+      - "3001:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
   php-demo:
     image: dunglas/frankenphp:1-php8.5-bookworm
     network_mode: bridge
@@ -29,6 +50,11 @@ services:
       SERVER_NAME: :80
       APP_ENV: dev
       DEMO_MODE: classique
+      MERCURE_URL: http://host.docker.internal:3001/.well-known/mercure
+      MERCURE_PUBLIC_URL: http://localhost:3001/.well-known/mercure
+      MERCURE_JWT_SECRET: mercure-local-development-secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8384:80"
     volumes:
@@ -45,6 +71,9 @@ services:
       SERVER_NAME: :80
       APP_ENV: dev
       DEMO_MODE: worker
+      MERCURE_URL: http://host.docker.internal:3001/.well-known/mercure
+      MERCURE_PUBLIC_URL: http://localhost:3001/.well-known/mercure
+      MERCURE_JWT_SECRET: mercure-local-development-secret
       FRANKENPHP_CONFIG: |
         worker {
           file ./public/index.php
@@ -53,6 +82,8 @@ services:
         }
     ports:
       - "8385:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./franken-symfony:/app
       - ./docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
