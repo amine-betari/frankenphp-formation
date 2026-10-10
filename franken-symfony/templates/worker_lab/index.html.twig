@@ -1,0 +1,112 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Laboratoire Worker FrankenPHP{% endblock %}
+
+{% block body %}
+<style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #f4f6fa; color: #172033; }
+    main { width: min(1100px, calc(100% - 32px)); margin: 36px auto; }
+    h1 { margin-bottom: 8px; font-size: clamp(28px, 5vw, 44px); }
+    .intro { max-width: 800px; color: #5e687a; line-height: 1.6; }
+    .actions { display: flex; gap: 12px; margin: 24px 0; flex-wrap: wrap; }
+    button { border: 0; border-radius: 10px; padding: 12px 18px; background: #1d4ed8; color: white; font: inherit; font-weight: 750; cursor: pointer; }
+    button.secondary { background: #101828; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .card { background: white; border: 1px solid #e1e6ef; border-radius: 16px; padding: 20px; box-shadow: 0 8px 25px rgba(16, 24, 40, .06); }
+    .card h2 { margin: 0 0 5px; }
+    .url { color: #667085; font-size: 14px; }
+    .summary { min-height: 48px; margin: 18px 0; padding: 12px; border-radius: 10px; background: #eff6ff; color: #1e40af; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 9px 7px; border-bottom: 1px solid #edf0f5; text-align: left; }
+    th { color: #667085; }
+    code { color: #7c3aed; font-weight: 700; }
+    .lesson { margin-top: 18px; border-left: 4px solid #f59e0b; }
+    .lesson p { line-height: 1.55; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+</style>
+
+<main>
+    <h1>Classique vs Worker</h1>
+    <p class="intro">Chaque appel utilise un service Symfony dont la construction coûte volontairement 250 ms. Lance 20 appels et observe les instances ainsi que leurs compteurs.</p>
+
+    <div class="actions">
+        <button id="run" type="button">Lancer 20 appels sur chaque mode</button>
+        <button id="clear" class="secondary" type="button">Effacer les résultats</button>
+    </div>
+
+    <div class="grid">
+        <section class="card" data-panel="classic">
+            <h2>Mode classique</h2>
+            <div class="url">localhost:8384</div>
+            <div class="summary">En attente du test…</div>
+            <table><thead><tr><th>#</th><th>Durée navigateur</th><th>Instance</th><th>Compteur</th></tr></thead><tbody></tbody></table>
+        </section>
+
+        <section class="card" data-panel="worker">
+            <h2>Mode Worker</h2>
+            <div class="url">localhost:8385 · pool de 10 threads</div>
+            <div class="summary">En attente du test…</div>
+            <table><thead><tr><th>#</th><th>Durée navigateur</th><th>Instance</th><th>Compteur</th></tr></thead><tbody></tbody></table>
+        </section>
+    </div>
+
+    <section class="card lesson">
+        <h2>Ce qu’il faut regarder</h2>
+        <p><strong>Classique :</strong> une nouvelle instance apparaît à chaque appel et son compteur vaut toujours 1.</p>
+        <p><strong>Worker :</strong> les instances reviennent et leur compteur augmente. Les 250 ms d’initialisation ne sont payées qu’au premier passage dans chaque worker.</p>
+        <p>Le PID peut être identique dans les deux modes : FrankenPHP exécute PHP dans des threads, sans PHP-FPM. L’identifiant du service est donc plus parlant ici.</p>
+    </section>
+</main>
+
+<script>
+const targets = {
+    classic: 'http://localhost:8384/api/worker-lab',
+    worker: 'http://localhost:8385/api/worker-lab',
+};
+
+function reset() {
+    document.querySelectorAll('[data-panel]').forEach(panel => {
+        panel.querySelector('tbody').innerHTML = '';
+        panel.querySelector('.summary').textContent = 'En attente du test…';
+    });
+}
+
+async function runTarget(name, url) {
+    const panel = document.querySelector(`[data-panel="${name}"]`);
+    const body = panel.querySelector('tbody');
+    const summary = panel.querySelector('.summary');
+    const durations = [];
+    const instances = new Set();
+
+    summary.textContent = 'Test en cours…';
+    for (let index = 1; index <= 20; index++) {
+        const startedAt = performance.now();
+        const response = await fetch(`${url}?run=${Date.now()}-${index}`, {cache: 'no-store'});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const duration = performance.now() - startedAt;
+        durations.push(duration);
+        instances.add(data.instance_service);
+        body.insertAdjacentHTML('beforeend', `<tr><td>${index}</td><td>${duration.toFixed(0)} ms</td><td><code>${data.instance_service}</code></td><td>${data.requetes_par_instance}</td></tr>`);
+    }
+
+    const average = durations.reduce((sum, duration) => sum + duration, 0) / durations.length;
+    summary.innerHTML = `<strong>${average.toFixed(0)} ms en moyenne</strong><br>${instances.size} instance(s) de service observée(s)`;
+}
+
+document.querySelector('#run').addEventListener('click', async event => {
+    reset();
+    event.currentTarget.disabled = true;
+    try {
+        await Promise.all(Object.entries(targets).map(([name, url]) => runTarget(name, url)));
+    } catch (error) {
+        alert(`Test impossible : ${error.message}. Vérifie que les deux conteneurs sont démarrés.`);
+    } finally {
+        event.currentTarget.disabled = false;
+    }
+});
+document.querySelector('#clear').addEventListener('click', reset);
+</script>
+{% endblock %}

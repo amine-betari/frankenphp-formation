@@ -78,6 +78,8 @@ docker compose exec symfony-classic \
 | Tableau de bord météo | Worker | <http://localhost:8385/weather> |
 | Compteur en mémoire | Classique | <http://localhost:8384/demo/compteur> |
 | Compteur en mémoire | Worker | <http://localhost:8385/demo/compteur> |
+| Laboratoire service coûteux | Classique | <http://localhost:8384/worker-lab> |
+| Laboratoire service coûteux | Worker | <http://localhost:8385/worker-lab> |
 | Santé Symfony | Classique | <http://localhost:8384/health> |
 | Santé Symfony | Worker | <http://localhost:8385/health> |
 
@@ -143,6 +145,15 @@ Mode Worker    : environ 1 800 requêtes/seconde
 ```
 
 Ces valeurs sont indicatives et dépendent du matériel, du mode debug et du nombre de workers.
+
+## Laboratoire Worker
+
+La page `/worker-lab` appelle vingt fois les modes classique et Worker. Un service Symfony simule une initialisation coûteuse de 250 ms :
+
+- en classique, le service est recréé à chaque requête ;
+- en Worker, son instance reste en mémoire et son compteur augmente.
+
+Ce laboratoire montre aussi pourquoi un service partagé ne doit pas conserver de données propres à un utilisateur.
 
 ## Commandes utiles
 
