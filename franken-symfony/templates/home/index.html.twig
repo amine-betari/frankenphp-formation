@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Laboratoire FrankenPHP{% endblock %}
+
+{% block body %}
+<style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #f4f6fa; color: #172033; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 38px auto 60px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+    h1 { margin: 0 0 8px; font-size: clamp(30px, 5vw, 48px); }
+    header p { margin: 0; color: #667085; line-height: 1.6; }
+    .mode { padding: 9px 14px; border-radius: 999px; background: #e8f1ff; color: #175cd3; font-weight: 800; white-space: nowrap; }
+    .instances { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+    .instances a { padding: 10px 14px; border: 1px solid #d7deea; border-radius: 10px; background: white; color: #344054; font-weight: 700; text-decoration: none; }
+    .instances a:hover { border-color: #2563eb; color: #175cd3; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .card { background: white; border: 1px solid #e2e7ef; border-radius: 16px; padding: 21px; box-shadow: 0 8px 26px rgba(16, 24, 40, .05); }
+    .card h2 { margin: 0 0 6px; font-size: 20px; }
+    .card > p { margin: 0 0 16px; color: #667085; font-size: 14px; line-height: 1.5; }
+    .links { display: grid; gap: 9px; }
+    .links a { display: flex; justify-content: space-between; gap: 14px; padding: 11px 12px; border-radius: 9px; background: #f8fafc; color: #1d2939; font-weight: 700; text-decoration: none; }
+    .links a:hover { background: #eef4ff; color: #175cd3; }
+    .links code { color: #667085; font-size: 12px; font-weight: 500; text-align: right; }
+    .api { border-top: 4px solid #7c3aed; }
+    .realtime { border-top: 4px solid #12b76a; }
+    .learning { border-top: 4px solid #f59e0b; }
+    .application { border-top: 4px solid #2563eb; }
+    footer { margin-top: 24px; padding: 18px; border-radius: 12px; background: #101828; color: #d0d5dd; line-height: 1.6; }
+    footer a { color: white; font-weight: 750; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } header { flex-direction: column; } }
+</style>
+
+<main>
+    <header>
+        <div>
+            <h1>Laboratoire FrankenPHP</h1>
+            <p>Toutes les démonstrations Symfony, API et temps réel depuis un seul accueil.</p>
+        </div>
+        <span class="mode">Instance {{ execution_mode|capitalize }}</span>
+    </header>
+
+    <nav class="instances" aria-label="Instances du laboratoire">
+        <a href="http://localhost:8282">PHP minimal · 8282</a>
+        <a href="http://localhost:8384">Symfony classique · 8384</a>
+        <a href="http://localhost:8385">Symfony Worker · 8385</a>
+        <a href="http://localhost:8384/mercure-demo">Mercure temps réel · 8384</a>
+    </nav>
+
+    <div class="grid">
+        <section class="card application">
+            <h2>Applications</h2>
+            <p>Exemples complets avec interface et données.</p>
+            <div class="links">
+                <a href="/products"><span>Catalogue de produits</span><code>/products</code></a>
+                <a href="/weather"><span>Tableau de bord météo</span><code>/weather</code></a>
+                <a href="/bonjour/Amine"><span>Bonjour dynamique</span><code>/bonjour/Amine</code></a>
+            </div>
+        </section>
+
+        <section class="card realtime">
+            <h2>Temps réel avec Mercure</h2>
+            <p>À ouvrir dans deux onglets pour voir les messages arriver sans actualisation.</p>
+            <div class="links">
+                <a href="http://localhost:8384/mercure-demo"><span>Démonstration Mercure</span><code>:8384/mercure-demo</code></a>
+                <a href="https://mercure.rocks/docs/"><span>Documentation Mercure</span><code>mercure.rocks/docs</code></a>
+            </div>
+        </section>
+
+        <section class="card learning">
+            <h2>Comprendre FrankenPHP</h2>
+            <p>Cycle de vie, mémoire et rechargement du code.</p>
+            <div class="links">
+                <a href="/worker-lab"><span>Classique contre Worker</span><code>/worker-lab</code></a>
+                <a href="/demo/compteur"><span>Compteur en mémoire</span><code>/demo/compteur</code></a>
+                <a href="/demo/code-version"><span>Version du code chargé</span><code>/demo/code-version</code></a>
+            </div>
+        </section>
+
+        <section class="card api">
+            <h2>API JSON</h2>
+            <p>Routes GET directement consultables dans le navigateur.</p>
+            <div class="links">
+                <a href="/api/test"><span>API minimale Symfony</span><code>/api/test</code></a>
+                <a href="/api/products"><span>Liste des produits</span><code>/api/products</code></a>
+                <a href="/api/weather?city=Paris"><span>Météo de Paris</span><code>/api/weather?city=Paris</code></a>
+                <a href="/api/worker-lab"><span>État du service Worker</span><code>/api/worker-lab</code></a>
+                <a href="/health"><span>Santé de Symfony</span><code>/health</code></a>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        Code et documentation :
+        <a href="https://github.com/amine-betari/frankenphp-formation">github.com/amine-betari/frankenphp-formation</a>.
+        Les liens relatifs utilisent automatiquement l’instance actuelle, classique ou Worker.
+    </footer>
+</main>
+{% endblock %}

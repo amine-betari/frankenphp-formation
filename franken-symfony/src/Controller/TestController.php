@@ -2,11 +2,12 @@
 
 namespace App\Controller;
 
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-final class TestController
+final class TestController extends AbstractController
 {
     #[Route('/demo/code-version', name: 'app_code_version', methods: ['GET'])]
     public function codeVersion(): JsonResponse
@@ -47,7 +48,9 @@ final class TestController
     #[Route('/', name: 'app_home')]
     public function index(): Response
     {
-        return new Response('<h1>Accueil Symfony</h1>');
+        return $this->render('home/index.html.twig', [
+            'execution_mode' => getenv('DEMO_MODE') ?: 'inconnu',
+        ]);
     }
 
     #[Route('/bonjour/{nom}', name: 'app_bonjour')]
