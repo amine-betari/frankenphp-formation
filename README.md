@@ -19,7 +19,7 @@ Le projet Symfony contient notamment :
 
 - une démonstration de la mémoire entre les requêtes ;
 - une API REST de produits avec Doctrine et SQLite ;
-- une interface de gestion des produits ;
+- une interface de gestion des produits synchronisée en temps réel avec Mercure ;
 - une API météo utilisant Symfony HttpClient et Open-Meteo ;
 - deux graphiques météo dessinés dans le navigateur ;
 - un benchmark interactif classique contre Worker.
@@ -156,6 +156,8 @@ Symfony publie → Hub Mercure distribue → EventSource reçoit
 ```
 
 Ouvrir <http://localhost:8384/mercure-demo> dans deux onglets, puis publier un message dans l’un des deux. Cette démonstration est indépendante du mode Worker.
+
+La page <http://localhost:8384/products> utilise également Mercure. Une création, une modification de stock ou une suppression effectuée dans un onglet est répercutée automatiquement dans tous les autres onglets du catalogue.
 
 ## Laboratoire Worker
 

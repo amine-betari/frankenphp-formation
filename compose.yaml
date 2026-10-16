@@ -18,7 +18,7 @@ services:
       MERCURE_TRUSTED_ISSUERS: https://frankenphp.local
       MERCURE_EXTRA_DIRECTIVES: |
         anonymous
-        cors_origins http://localhost:8384
+        cors_origins http://localhost:8384 http://localhost:8385
         resource_identifier http://localhost:3001/.well-known/mercure
     ports:
       - "3001:80"

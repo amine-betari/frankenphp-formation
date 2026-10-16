@@ -13,6 +13,9 @@
     .badge { padding: 9px 14px; border-radius: 999px; background: #e8f1ff; color: #175cd3; font-weight: 700; }
     .weather-link { padding: 9px 14px; border-radius: 999px; background: white; border: 1px solid #dce2eb; color: #344054; font-weight: 700; text-decoration: none; }
     .header-actions { display: flex; align-items: center; gap: 10px; }
+    .live-status { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; background: #fff7ed; color: #9a3412; font-weight: 700; }
+    .live-status.connected { background: #ecfdf3; color: #067647; }
+    .live-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
     .grid { display: grid; grid-template-columns: minmax(280px, 360px) 1fr; gap: 22px; align-items: start; }
     .card { background: white; border: 1px solid #e5e9f0; border-radius: 16px; padding: 22px; box-shadow: 0 10px 30px rgba(23, 32, 51, .06); }
     h2 { margin: 0 0 18px; font-size: 20px; }
@@ -28,6 +31,7 @@
     .danger { background: #fff0f0; color: #c52222; }
     .products { display: grid; gap: 11px; }
     .product { display: grid; grid-template-columns: 1fr auto; gap: 14px; padding: 15px; border: 1px solid #e5e9f0; border-radius: 11px; }
+    .product.realtime-update { animation: realtime-highlight 1.4s ease-out; }
     .product h3 { margin: 0 0 6px; font-size: 17px; }
     .meta { color: #667085; font-size: 14px; }
     .price { color: #175cd3; font-weight: 800; }
@@ -43,6 +47,7 @@
     .benchmark button:disabled { opacity: .55; cursor: wait; }
     .benchmark-result { min-width: 210px; font-size: 14px; line-height: 1.55; color: #344054; }
     .benchmark-result strong { color: #175cd3; font-size: 18px; }
+    @keyframes realtime-highlight { from { background: #dcfce7; border-color: #22c55e; transform: translateY(-2px); } to { background: white; border-color: #e5e9f0; transform: translateY(0); } }
     @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } header { align-items: flex-start; flex-direction: column; } }
     @media (max-width: 760px) { .benchmark, .benchmark-actions { align-items: stretch; flex-direction: column; } .benchmark-result { min-width: 0; } }
 </style>
@@ -53,7 +58,11 @@
             <h1>Catalogue de produits</h1>
             <p>Interface Symfony connectée à l’API JSON.</p>
         </div>
-        <div class="header-actions"><a class="weather-link" href="/weather">Météo</a><span class="badge">Mode {{ execution_mode|capitalize }}</span></div>
+        <div class="header-actions">
+            <a class="weather-link" href="/">Accueil</a>
+            <div id="live-status" class="live-status"><span class="live-dot"></span><span>Connexion Mercure…</span></div>
+            <span class="badge">Mode {{ execution_mode|capitalize }}</span>
+        </div>
     </header>
 
     <section class="card benchmark">
@@ -114,6 +123,36 @@ function escapeHtml(value) {
     return element.innerHTML;
 }
 
+function productTemplate(product) {
+    return `
+        <article class="product" data-product-id="${product.id}">
+            <div>
+                <h3>${escapeHtml(product.name)}</h3>
+                <span class="price">${product.price}</span>
+                <span class="meta"> · Stock : ${product.stock}</span>
+            </div>
+            <div class="actions">
+                <button class="secondary" onclick="editProduct(${product.id}, ${product.stock})">Modifier</button>
+                <button class="danger" onclick="deleteProduct(${product.id})">Supprimer</button>
+            </div>
+        </article>`;
+}
+
+function upsertProduct(product) {
+    const current = list.querySelector(`[data-product-id="${product.id}"]`);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = productTemplate(product).trim();
+    const updated = wrapper.firstElementChild;
+    updated.classList.add('realtime-update');
+
+    list.querySelector('.empty')?.remove();
+    if (current) {
+        current.replaceWith(updated);
+    } else {
+        list.prepend(updated);
+    }
+}
+
 async function loadProducts() {
     const query = encodeURIComponent(search.value.trim());
     const response = await fetch(`/api/products${query ? `?q=${query}` : ''}`);
@@ -124,19 +163,7 @@ async function loadProducts() {
         return;
     }
 
-    list.innerHTML = data.items.map(product => `
-        <article class="product">
-            <div>
-                <h3>${escapeHtml(product.name)}</h3>
-                <span class="price">${product.price}</span>
-                <span class="meta"> · Stock : ${product.stock}</span>
-            </div>
-            <div class="actions">
-                <button class="secondary" onclick="editProduct(${product.id}, ${product.stock})">Modifier</button>
-                <button class="danger" onclick="deleteProduct(${product.id})">Supprimer</button>
-            </div>
-        </article>
-    `).join('');
+    list.innerHTML = data.items.map(productTemplate).join('');
 }
 
 form.addEventListener('submit', async event => {
@@ -159,7 +186,6 @@ form.addEventListener('submit', async event => {
     notify(`Produit « ${data.name} » créé avec l’identifiant ${data.id}.`);
     form.reset();
     document.querySelector('#stock').value = 1;
-    await loadProducts();
 });
 
 async function editProduct(id, currentStock) {
@@ -180,7 +206,6 @@ async function editProduct(id, currentStock) {
         return;
     }
     notify(`Stock du produit ${id} modifié.`);
-    await loadProducts();
 }
 
 async function deleteProduct(id) {
@@ -191,7 +216,6 @@ async function deleteProduct(id) {
         return;
     }
     notify(`Produit ${id} supprimé.`);
-    await loadProducts();
 }
 
 let searchTimer;
@@ -200,6 +224,36 @@ search.addEventListener('input', () => {
     searchTimer = setTimeout(loadProducts, 250);
 });
 document.querySelector('#refresh').addEventListener('click', loadProducts);
+
+const mercureUrl = {{ mercure(mercure_topic)|json_encode|raw }};
+const eventSource = new EventSource(mercureUrl);
+const liveStatus = document.querySelector('#live-status');
+
+eventSource.onopen = () => {
+    liveStatus.className = 'live-status connected';
+    liveStatus.querySelector('span:last-child').textContent = 'Catalogue en direct';
+};
+
+eventSource.onerror = () => {
+    liveStatus.className = 'live-status';
+    liveStatus.querySelector('span:last-child').textContent = 'Reconnexion Mercure…';
+};
+
+eventSource.onmessage = event => {
+    const update = JSON.parse(event.data);
+    const product = update.product;
+
+    if (update.type === 'product.deleted') {
+        list.querySelector(`[data-product-id="${product.id}"]`)?.remove();
+        if (!list.querySelector('.product')) {
+            list.innerHTML = '<div class="empty">Aucun produit trouvé.</div>';
+        }
+    } else {
+        upsertProduct(product);
+    }
+
+    notify(`Temps réel : ${update.type} pour « ${product.name} ».`);
+};
 
 document.querySelector('#run-benchmark').addEventListener('click', async event => {
     const button = event.currentTarget;

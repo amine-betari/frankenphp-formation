@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Realtime\ProductUpdatePublisher;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -13,6 +14,7 @@ final class ProductPageController extends AbstractController
     {
         return $this->render('product/index.html.twig', [
             'execution_mode' => getenv('DEMO_MODE') ?: 'inconnu',
+            'mercure_topic' => ProductUpdatePublisher::TOPIC,
         ]);
     }
 }

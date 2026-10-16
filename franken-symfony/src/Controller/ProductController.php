@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Product;
+use App\Realtime\ProductUpdatePublisher;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -34,7 +35,7 @@ final class ProductController
     }
 
     #[Route('', name: 'api_products_create', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function create(Request $request, EntityManagerInterface $entityManager, ProductUpdatePublisher $publisher): JsonResponse
     {
         $data = $this->json($request);
         if ($data instanceof JsonResponse) {
@@ -53,6 +54,7 @@ final class ProductController
 
         $entityManager->persist($product);
         $entityManager->flush();
+        $publisher->publish('product.created', $product);
 
         return new JsonResponse(
             $this->normalize($product),
@@ -62,7 +64,7 @@ final class ProductController
     }
 
     #[Route('/{id}', name: 'api_products_update', requirements: ['id' => '\\d+'], methods: ['PATCH'])]
-    public function update(Product $product, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function update(Product $product, Request $request, EntityManagerInterface $entityManager, ProductUpdatePublisher $publisher): JsonResponse
     {
         $data = $this->json($request);
         if ($data instanceof JsonResponse) {
@@ -84,15 +86,18 @@ final class ProductController
         }
 
         $entityManager->flush();
+        $publisher->publish('product.updated', $product);
 
         return new JsonResponse($this->normalize($product));
     }
 
     #[Route('/{id}', name: 'api_products_delete', requirements: ['id' => '\\d+'], methods: ['DELETE'])]
-    public function delete(Product $product, EntityManagerInterface $entityManager): Response
+    public function delete(Product $product, EntityManagerInterface $entityManager, ProductUpdatePublisher $publisher): Response
     {
+        $productId = $product->getId();
         $entityManager->remove($product);
         $entityManager->flush();
+        $publisher->publish('product.deleted', $product, $productId);
 
         return new Response(status: Response::HTTP_NO_CONTENT);
     }
