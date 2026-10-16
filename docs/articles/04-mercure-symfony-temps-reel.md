@@ -114,10 +114,36 @@ extra_hosts:
   - "host.docker.internal:host-gateway"
 ```
 
-Pourquoi deux URLs ?
+### Pourquoi ces deux adresses sont-elles différentes ?
 
-- `MERCURE_URL` est utilisée par Symfony depuis son conteneur pour publier ;
-- `MERCURE_PUBLIC_URL` est donnée au navigateur pour s’abonner.
+`http://localhost:3001/.well-known/mercure` est l’adresse du Hub vue depuis le navigateur. Dans notre `compose.yaml`, le port `3001` de l’ordinateur est relié au port `80` du conteneur Mercure :
+
+```text
+Navigateur → localhost:3001 → conteneur Mercure:80
+```
+
+Le chemin `/.well-known/mercure` est l’endpoint officiel du Hub. Le navigateur y ouvre une connexion SSE qui reste active pour recevoir les événements.
+
+`http://host.docker.internal:3001/.well-known/mercure` désigne le même Hub, mais depuis le conteneur Symfony. Dans un conteneur, `localhost` désigne le conteneur lui-même. Si Symfony appelait `localhost:3001`, il chercherait donc Mercure à l’intérieur du conteneur Symfony.
+
+`host.docker.internal` permet au conteneur de repasser par la machine hôte :
+
+```text
+Conteneur Symfony
+        ↓
+host.docker.internal:3001
+        ↓
+Port 3001 de l’ordinateur
+        ↓
+Conteneur Mercure:80
+```
+
+Nous avons donc deux adresses pour un seul Hub :
+
+| Variable | Utilisée par | Rôle |
+|---|---|---|
+| `MERCURE_URL` | Symfony dans Docker | Publier les événements vers le Hub |
+| `MERCURE_PUBLIC_URL` | Navigateur | Ouvrir la connexion SSE et recevoir les événements |
 
 Notre Hub utilise Mercure 1.0. Le fichier `config/packages/mercure.yaml` déclare donc l’émetteur du jeton :
 
@@ -148,6 +174,24 @@ https://frankenphp.local/mercure-demo/messages
 Cette URL sert d’identifiant. Elle n’a pas besoin de correspondre à une vraie page accessible.
 
 Tous les navigateurs abonnés à ce topic recevront les événements qui y sont publiés.
+
+Le topic n’est donc ni l’adresse du Hub ni une route appelée par Symfony. C’est uniquement le nom du canal :
+
+```text
+Hub Mercure = la station de radio
+Topic       = la fréquence choisie
+Événement   = le message diffusé
+```
+
+Le navigateur demande au Hub d’écouter le topic `https://frankenphp.local/mercure-demo/messages`. Symfony publie ensuite un événement avec exactement le même topic. Le Hub associe les deux et transmet le message aux navigateurs concernés.
+
+Résumé des trois valeurs :
+
+| Valeur | Signification |
+|---|---|
+| `localhost:3001/.well-known/mercure` | Le Hub vu depuis le navigateur |
+| `host.docker.internal:3001/.well-known/mercure` | Le même Hub vu depuis Symfony dans Docker |
+| `https://frankenphp.local/mercure-demo/messages` | Le topic commun à l’émetteur et aux abonnés |
 
 ## Étape 5 : publier depuis Symfony
 
