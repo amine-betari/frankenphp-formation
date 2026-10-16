@@ -200,6 +200,7 @@ docker compose exec symfony-classic php bin/console debug:router
 2. [FrankenPHP avec Symfony : Caddyfile, logs, healthchecks et rechargement des Workers](https://www.abetari.com/frankenphp-avec-symfony-caddyfile-logs-healthchecks-et-rechargement-des-workers/)
 3. [FrankenPHP Worker avec Symfony : mesurer concrètement la réutilisation des services](https://www.abetari.com/frankenphp-worker-symfony-reutilisation-services/)
 4. [Mercure avec Symfony : comprendre et créer une première route temps réel](https://www.abetari.com/mercure-symfony-premiere-route-temps-reel/)
+5. [Symfony et Mercure : synchroniser un catalogue de produits en temps réel](https://www.abetari.com/symfony-mercure-catalogue-produits-temps-reel/)
 
 La suite de la série est organisée dans la [feuille de route](docs/ROADMAP.md).
 
