@@ -19,6 +19,7 @@ services:
       MERCURE_EXTRA_DIRECTIVES: |
         anonymous
         cors_origins http://localhost:8384 http://localhost:8385
+        cookie_name mercure_access_token
         resource_identifier http://localhost:3001/.well-known/mercure
     ports:
       - "3001:80"

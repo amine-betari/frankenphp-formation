@@ -1,0 +1,169 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Comprendre les topics Mercure{% endblock %}
+
+{% block body %}
+<style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #f4f6fa; color: #172033; }
+    main { width: min(900px, calc(100% - 32px)); margin: 38px auto; }
+    h1 { margin-bottom: 8px; font-size: clamp(30px, 5vw, 44px); }
+    .intro { color: #667085; line-height: 1.6; }
+    .identity { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin: 22px 0; padding: 14px 16px; border-radius: 11px; background: white; border: 1px solid #e2e7ef; }
+    .identity a { color: #b42318; font-weight: 750; }
+    .topic { overflow-wrap: anywhere; padding: 15px; border-radius: 11px; background: #eef4ff; color: #194185; }
+    .explanation { display: grid; gap: 8px; margin: 18px 0; padding: 16px; border-left: 4px solid #12b76a; background: #ecfdf3; line-height: 1.55; }
+    .explanation span { color: #475467; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .step { padding: 14px; border-radius: 11px; background: white; border: 1px solid #e2e7ef; text-align: center; }
+    .step strong { display: block; margin-bottom: 4px; }
+    .tests { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { padding: 22px; border: 1px solid #e2e7ef; border-radius: 16px; background: white; box-shadow: 0 10px 30px rgba(16,24,40,.06); }
+    .card.allowed { border-top: 5px solid #12b76a; }
+    .card.blocked { border-top: 5px solid #f04438; }
+    .card h2 { margin-top: 0; }
+    form { display: flex; gap: 10px; }
+    input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #cfd6e2; border-radius: 10px; font: inherit; }
+    button { padding: 12px 18px; border: 0; border-radius: 10px; color: white; background: #2563eb; font: inherit; font-weight: 750; cursor: pointer; }
+    .connection { margin: 18px 0; color: #667085; }
+    .connected { color: #067647; }
+    .error { color: #b42318; }
+    .messages { display: grid; gap: 10px; min-height: 70px; }
+    .message, .empty { padding: 14px; border-radius: 9px; background: #f8fafc; }
+    .message { border-left: 4px solid #7c3aed; }
+    .message small { display: block; margin-top: 5px; color: #667085; }
+    .result { margin-top: 12px; min-height: 24px; color: #667085; font-size: 14px; }
+    @media (max-width: 700px) { form { flex-direction: column; } .tests, .steps { grid-template-columns: 1fr; } }
+</style>
+
+<main>
+    <h1>Un topic par utilisateur</h1>
+    <p class="intro">Symfony Security connaît maintenant l’identité de la personne connectée. Aucun paramètre <code>?user=...</code> n’est utilisé.</p>
+
+    <div class="identity">
+        <span>Connecté avec Symfony : <strong>{{ username }}</strong></span>
+        <a href="{{ path('app_logout') }}">Se déconnecter</a>
+    </div>
+
+    <div class="topic"><strong>Topic privé écouté :</strong> <code>{{ topic }}</code></div>
+    <div class="explanation">
+        <strong>JWT actif pour {{ username }}</strong>
+        <span>Symfony vient de créer un JWT autorisant uniquement ce topic et de le placer dans un cookie HttpOnly. JavaScript ne peut pas lire ce cookie, mais EventSource l’envoie au Hub Mercure.</span>
+    </div>
+
+    <div class="steps">
+        <div class="step"><strong>1. Symfony</strong>crée le badge JWT</div>
+        <div class="step"><strong>2. Navigateur</strong>demande un topic</div>
+        <div class="step"><strong>3. Mercure</strong>autorise ou bloque</div>
+    </div>
+
+    <div class="tests">
+    <section class="card allowed">
+        <h2>✅ Test autorisé</h2>
+        <p>Le JWT de {{ username }} écoute le topic de {{ username }}.</p>
+        <form id="notification-form">
+            <input id="message" maxlength="200" required value="Notification privée pour {{ username }}" autocomplete="off">
+            <button type="submit">Tester</button>
+        </form>
+        <div id="connection" class="connection">Connexion au topic…</div>
+        <div id="messages" class="messages"><div class="empty">Aucune notification reçue.</div></div>
+    </section>
+
+    <section class="card blocked">
+        <h2>⛔ Test interdit</h2>
+        <p>Le JWT de {{ username }} tente d’écouter le topic de {{ other_username }}.</p>
+        <button id="blocked-test" type="button">Envoyer à {{ other_username }}</button>
+        <div id="blocked-connection" class="connection">Tentative de connexion au mauvais topic…</div>
+        <div id="blocked-messages" class="messages"><div class="empty">Aucun message reçu : Mercure doit le bloquer.</div></div>
+        <div id="blocked-result" class="result"></div>
+    </section>
+    </div>
+</main>
+
+<script>
+const username = {{ username|json_encode|raw }};
+const eventSource = new EventSource(
+    {{ mercure(topic, {subscribe: topic})|json_encode|raw }},
+    {withCredentials: true},
+);
+const forbiddenEventSource = new EventSource(
+    {{ mercure(other_topic)|json_encode|raw }},
+    {withCredentials: true},
+);
+const connection = document.querySelector('#connection');
+const messages = document.querySelector('#messages');
+const blockedConnection = document.querySelector('#blocked-connection');
+const blockedMessages = document.querySelector('#blocked-messages');
+
+eventSource.onopen = () => {
+    connection.className = 'connection connected';
+    connection.textContent = `Connecté au topic de ${username}`;
+};
+
+eventSource.onerror = () => {
+    connection.className = 'connection error';
+    connection.textContent = 'Connexion perdue — Mercure va réessayer automatiquement…';
+};
+
+eventSource.onmessage = event => {
+    const data = JSON.parse(event.data);
+    messages.querySelector('.empty')?.remove();
+    const article = document.createElement('article');
+    article.className = 'message';
+    const text = document.createElement('strong');
+    text.textContent = data.message;
+    const details = document.createElement('small');
+    details.textContent = `Topic ${data.recipient} · reçu à ${data.sent_at}`;
+    article.append(text, details);
+    messages.prepend(article);
+};
+
+forbiddenEventSource.onopen = () => {
+    blockedConnection.textContent = 'Connecté au Hub, mais sans droit sur le topic de {{ other_username }}';
+};
+
+forbiddenEventSource.onmessage = event => {
+    const data = JSON.parse(event.data);
+    blockedMessages.innerHTML = `<div class="message">Erreur : message reçu pour ${data.recipient}</div>`;
+};
+
+document.querySelector('#notification-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const input = document.querySelector('#message');
+    const response = await fetch(`/api/mercure/private/notify/${username}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: input.value}),
+    });
+    const data = await response.json();
+    if (!response.ok) alert(data.error ?? `Erreur HTTP ${response.status}`);
+});
+
+document.querySelector('#blocked-test').addEventListener('click', async event => {
+    event.currentTarget.disabled = true;
+    const result = document.querySelector('#blocked-result');
+    blockedMessages.innerHTML = '<div class="empty">Test en cours…</div>';
+
+    const response = await fetch('/api/mercure/private/notify/{{ other_username }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: 'Secret destiné à {{ other_username }}'}),
+    });
+
+    if (!response.ok) {
+        result.textContent = `Publication impossible : HTTP ${response.status}`;
+        event.currentTarget.disabled = false;
+        return;
+    }
+
+    result.textContent = 'Symfony a publié le message. Vérification pendant 1 seconde…';
+    setTimeout(() => {
+        if (!blockedMessages.querySelector('.message')) {
+            blockedMessages.innerHTML = '<div class="empty">✅ Message non reçu : Mercure l’a bloqué.</div>';
+        }
+        result.textContent = 'Le JWT ne contient pas l’autorisation pour ce topic.';
+        event.currentTarget.disabled = false;
+    }, 1000);
+});
+</script>
+{% endblock %}

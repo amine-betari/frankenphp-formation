@@ -52,7 +52,7 @@ Chaque étape doit produire du code reproductible, des captures, des mesures et 
 - [ ] PostgreSQL
 - [ ] Redis et cache Symfony
 - [ ] Messenger et traitements asynchrones
-- [ ] Mercure et mises à jour temps réel
+- [x] Mercure et mises à jour temps réel
 - [ ] Emails avec Mailpit
 
 ## Étape 7 — Observabilité

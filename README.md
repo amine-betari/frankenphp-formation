@@ -81,6 +81,7 @@ docker compose exec symfony-classic \
 | Laboratoire service coûteux | Classique | <http://localhost:8384/worker-lab> |
 | Laboratoire service coûteux | Worker | <http://localhost:8385/worker-lab> |
 | Démonstration Mercure | Temps réel | <http://localhost:8384/mercure-demo> |
+| Notifications privées JWT | Temps réel | <http://localhost:8384/mercure-private> |
 | Santé Symfony | Classique | <http://localhost:8384/health> |
 | Santé Symfony | Worker | <http://localhost:8385/health> |
 
@@ -158,6 +159,8 @@ Symfony publie → Hub Mercure distribue → EventSource reçoit
 Ouvrir <http://localhost:8384/mercure-demo> dans deux onglets, puis publier un message dans l’un des deux. Cette démonstration est indépendante du mode Worker.
 
 La page <http://localhost:8384/products> utilise également Mercure. Une création, une modification de stock ou une suppression effectuée dans un onglet est répercutée automatiquement dans tous les autres onglets du catalogue.
+
+La page <http://localhost:8384/mercure-private> relie Symfony Security à Mercure : l'utilisateur connecté reçoit un JWT limité à son topic personnel et les événements privés destinés à un autre compte sont filtrés par le Hub.
 
 ## Laboratoire Worker
 
