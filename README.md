@@ -1,6 +1,6 @@
 # FrankenPHP + Symfony Lab
 
-Projet pédagogique pour découvrir FrankenPHP avec Symfony 7.4, comparer le mode classique au mode Worker et construire des exemples concrets : API REST, persistance SQLite, interface Twig, API météo et benchmark.
+Projet pédagogique pour découvrir FrankenPHP avec Symfony 7.4 et construire des exemples concrets : API REST, persistance SQLite, Worker mode, Mercure, Messenger et traitements asynchrones.
 
 ![Tableau de bord météo avec FrankenPHP Worker](docs/images/franken-weather.png)
 
@@ -8,7 +8,7 @@ Projet pédagogique pour découvrir FrankenPHP avec Symfony 7.4, comparer le mod
 
 ```text
 .
-├── compose.yaml          # Les trois serveurs de démonstration
+├── compose.yaml          # Services FrankenPHP, Mercure et Messenger
 ├── docker/frankenphp/    # Configuration Caddy explicite
 ├── docs/images/          # Captures utilisées dans la documentation
 ├── franken-test/         # Application PHP minimale sans framework
@@ -20,6 +20,7 @@ Le projet Symfony contient notamment :
 - une démonstration de la mémoire entre les requêtes ;
 - une API REST de produits avec Doctrine et SQLite ;
 - une interface de gestion des produits synchronisée en temps réel avec Mercure ;
+- une tâche Messenger comparant polling et événements Mercure ;
 - une API météo utilisant Symfony HttpClient et Open-Meteo ;
 - deux graphiques météo dessinés dans le navigateur ;
 - un benchmark interactif classique contre Worker.
@@ -28,7 +29,7 @@ Le projet Symfony contient notamment :
 
 - Docker ;
 - Docker Compose v2 ;
-- les ports `8282`, `8384` et `8385` disponibles.
+- les ports `3001`, `8282`, `8384` et `8385` disponibles.
 
 PHP, Composer, Symfony CLI et PHP-FPM ne sont pas requis sur la machine hôte.
 
@@ -52,7 +53,7 @@ docker run --rm \
   composer:2 install
 ```
 
-Démarrer les trois serveurs :
+Démarrer les services :
 
 ```bash
 docker compose up -d
@@ -82,6 +83,8 @@ docker compose exec symfony-classic \
 | Laboratoire service coûteux | Worker | <http://localhost:8385/worker-lab> |
 | Démonstration Mercure | Temps réel | <http://localhost:8384/mercure-demo> |
 | Notifications privées JWT | Temps réel | <http://localhost:8384/mercure-private> |
+| Messenger avec polling | Asynchrone | <http://localhost:8384/messenger-demo> |
+| Messenger avec Mercure | Asynchrone + temps réel | <http://localhost:8384/messenger-mercure-demo> |
 | Santé Symfony | Classique | <http://localhost:8384/health> |
 | Santé Symfony | Worker | <http://localhost:8385/health> |
 
@@ -161,6 +164,17 @@ Ouvrir <http://localhost:8384/mercure-demo> dans deux onglets, puis publier un m
 La page <http://localhost:8384/products> utilise également Mercure. Une création, une modification de stock ou une suppression effectuée dans un onglet est répercutée automatiquement dans tous les autres onglets du catalogue.
 
 La page <http://localhost:8384/mercure-private> relie Symfony Security à Mercure : l'utilisateur connecté reçoit un JWT limité à son topic personnel et les événements privés destinés à un autre compte sont filtrés par le Hub.
+
+## Messenger et traitements asynchrones
+
+Le service `messenger-worker` consomme la file Doctrine `async` sans exposer de port web. Les applications classique et Worker peuvent toutes les deux produire une tâche ; le même consommateur l'exécute en arrière-plan.
+
+- <http://localhost:8384/messenger-demo> consulte l'état toutes les 500 ms par polling ;
+- <http://localhost:8384/messenger-mercure-demo> reçoit `running` et `completed` directement avec Mercure.
+
+```text
+Requête HTTP → file Messenger → Worker Messenger → Mercure → navigateur
+```
 
 ## Laboratoire Worker
 

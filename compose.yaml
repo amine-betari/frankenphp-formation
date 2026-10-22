@@ -90,3 +90,22 @@ services:
       - ./docker/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
     healthcheck: *healthcheck
     tty: true
+
+  messenger-worker:
+    image: dunglas/frankenphp:1-php8.5-bookworm
+    network_mode: bridge
+    working_dir: /app
+    environment:
+      APP_ENV: dev
+      MESSENGER_TRANSPORT_DSN: doctrine://default?auto_setup=0
+      MERCURE_URL: http://host.docker.internal:3001/.well-known/mercure
+      MERCURE_PUBLIC_URL: http://localhost:3001/.well-known/mercure
+      MERCURE_JWT_SECRET: mercure-local-development-secret
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: php bin/console messenger:consume async --time-limit=3600 --memory-limit=128M -vv
+    volumes:
+      - ./franken-symfony:/app
+    restart: unless-stopped
+    healthcheck:
+      disable: true

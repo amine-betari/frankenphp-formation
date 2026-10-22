@@ -51,7 +51,7 @@ Chaque étape doit produire du code reproductible, des captures, des mesures et 
 
 - [ ] PostgreSQL
 - [ ] Redis et cache Symfony
-- [ ] Messenger et traitements asynchrones
+- [x] Messenger et traitements asynchrones
 - [x] Mercure et mises à jour temps réel
 - [ ] Emails avec Mailpit
 

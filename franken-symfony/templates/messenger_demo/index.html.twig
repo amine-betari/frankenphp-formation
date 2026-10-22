@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Comprendre Symfony Messenger{% endblock %}
+
+{% block body %}
+<style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; background: #f4f6fa; color: #172033; }
+    main { width: min(880px, calc(100% - 32px)); margin: 42px auto; }
+    h1 { margin-bottom: 8px; font-size: clamp(30px, 5vw, 44px); }
+    .intro { color: #667085; line-height: 1.6; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin: 25px 0; }
+    .flow div { padding: 14px; border: 1px solid #dce3ee; border-radius: 11px; background: white; text-align: center; font-weight: 750; }
+    .card { padding: 24px; border: 1px solid #e2e7ef; border-radius: 16px; background: white; box-shadow: 0 10px 30px rgba(16,24,40,.06); }
+    button { padding: 13px 19px; border: 0; border-radius: 10px; color: white; background: #7c3aed; font: inherit; font-weight: 800; cursor: pointer; }
+    button:disabled { opacity: .55; }
+    .status { margin-top: 20px; padding: 18px; border-radius: 11px; background: #f8fafc; }
+    .bar { height: 12px; margin: 12px 0; overflow: hidden; border-radius: 99px; background: #e4e7ec; }
+    .bar span { display: block; width: 0; height: 100%; background: #12b76a; transition: width .3s; }
+    dl { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
+    dt { color: #667085; }
+    dd { margin: 0; font-weight: 700; }
+    pre { overflow: auto; padding: 14px; border-radius: 9px; color: #e6edf3; background: #101828; }
+    @media (max-width: 700px) { .flow { grid-template-columns: 1fr; } }
+</style>
+
+<main>
+    <h1>Symfony Messenger en arrière-plan</h1>
+    <p class="intro">Lance un rapport : la requête HTTP répond immédiatement, puis un autre processus effectue le travail pendant trois secondes.</p>
+
+    <div class="flow">
+        <div>1. Navigateur</div>
+        <div>2. File Messenger</div>
+        <div>3. Worker</div>
+        <div>4. Résultat</div>
+    </div>
+
+    <section class="card">
+        <button id="start" type="button">Générer le rapport</button>
+        <div id="status" class="status">
+            <strong>Aucune tâche lancée.</strong>
+            <div class="bar"><span id="progress"></span></div>
+            <dl>
+                <dt>État</dt><dd id="state">—</dd>
+                <dt>Job ID</dt><dd id="job-id">—</dd>
+                <dt>Requêtes de statut</dt><dd id="poll-count">0</dd>
+                <dt>Processus HTTP</dt><dd id="http-process">—</dd>
+                <dt>Processus Worker</dt><dd id="worker-process">—</dd>
+            </dl>
+            <pre id="result">Le résultat apparaîtra ici.</pre>
+        </div>
+    </section>
+</main>
+
+<script>
+const button = document.querySelector('#start');
+const state = document.querySelector('#state');
+const progress = document.querySelector('#progress');
+const result = document.querySelector('#result');
+const httpProcess = document.querySelector('#http-process');
+const workerProcess = document.querySelector('#worker-process');
+const pollCount = document.querySelector('#poll-count');
+let statusRequests = 0;
+
+async function refresh(statusUrl) {
+    statusRequests++;
+    pollCount.textContent = statusRequests;
+    const response = await fetch(statusUrl);
+    const job = await response.json();
+    state.textContent = `${job.status} — ${job.message}`;
+    progress.style.width = `${job.progress}%`;
+    httpProcess.textContent = job.http_instance ? `${job.http_instance} · PID ${job.http_pid}` : httpProcess.textContent;
+    workerProcess.textContent = job.worker_instance ? `${job.worker_instance} · PID ${job.worker_pid}` : 'pas encore démarré';
+
+    if (job.status === 'completed') {
+        result.textContent = JSON.stringify(job.result, null, 2);
+        button.disabled = false;
+        return;
+    }
+
+    setTimeout(() => refresh(statusUrl), 500);
+}
+
+button.addEventListener('click', async () => {
+    button.disabled = true;
+    statusRequests = 0;
+    pollCount.textContent = '0';
+    result.textContent = 'La requête HTTP est partie…';
+    const response = await fetch('/api/messenger/jobs', {method: 'POST'});
+    const job = await response.json();
+    document.querySelector('#job-id').textContent = job.job_id;
+    refresh(job.status_url);
+});
+</script>
+{% endblock %}
