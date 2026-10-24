@@ -14,6 +14,7 @@
     .comparison .active { border: 2px solid #12b76a; background: #ecfdf3; }
     .card { padding: 24px; border: 1px solid #e2e7ef; border-radius: 16px; background: white; box-shadow: 0 10px 30px rgba(16,24,40,.06); }
     button { padding: 13px 19px; border: 0; border-radius: 10px; color: white; background: #067647; font: inherit; font-weight: 800; cursor: pointer; }
+    button.danger { margin-left: 8px; background: #b42318; }
     button:disabled { opacity: .55; }
     .connection { margin: 15px 0; color: #b54708; }
     .connection.connected { color: #067647; }
@@ -33,11 +34,12 @@
 
     <div class="comparison">
         <a href="/messenger-demo"><strong>Version 1 · Polling</strong><br>une requête d'état toutes les 500 ms</a>
-        <div class="active"><strong>Version 2 · Mercure</strong><br>une connexion ouverte, deux événements reçus</div>
+        <div class="active"><strong>Version 2 · Mercure</strong><br>une connexion ouverte, événements poussés en direct</div>
     </div>
 
     <section class="card">
         <button id="start" type="button" disabled>Générer le rapport</button>
+        <button id="start-failure" class="danger" type="button" disabled>Simuler une erreur</button>
         <div id="connection" class="connection">Connexion au Hub Mercure…</div>
         <div class="status">
             <div class="bar"><span id="progress"></span></div>
@@ -46,6 +48,7 @@
                 <dt>Job ID</dt><dd id="job-id">—</dd>
                 <dt>Requêtes de statut</dt><dd id="poll-count">0</dd>
                 <dt>Événements Mercure</dt><dd id="event-count">0</dd>
+                <dt>Tentative</dt><dd id="attempt">—</dd>
                 <dt>Worker Messenger</dt><dd id="worker-process">—</dd>
             </dl>
             <pre id="result">Le résultat apparaîtra ici.</pre>
@@ -55,10 +58,12 @@
 
 <script>
 const button = document.querySelector('#start');
+const failureButton = document.querySelector('#start-failure');
 const connection = document.querySelector('#connection');
 const state = document.querySelector('#state');
 const progress = document.querySelector('#progress');
 const eventCount = document.querySelector('#event-count');
+const attempt = document.querySelector('#attempt');
 const workerProcess = document.querySelector('#worker-process');
 const result = document.querySelector('#result');
 const bufferedEvents = new Map();
@@ -71,12 +76,14 @@ eventSource.onopen = () => {
     connection.className = 'connection connected';
     connection.textContent = 'Connecté à Mercure — aucune requête de statut nécessaire';
     button.disabled = false;
+    failureButton.disabled = false;
 };
 
 eventSource.onerror = () => {
     connection.className = 'connection';
     connection.textContent = 'Connexion perdue — EventSource tente de se reconnecter…';
     button.disabled = true;
+    failureButton.disabled = true;
 };
 
 function displayJob(job) {
@@ -84,11 +91,24 @@ function displayJob(job) {
     eventCount.textContent = receivedEvents;
     state.textContent = `${job.status} — ${job.message}`;
     progress.style.width = `${job.progress}%`;
+    progress.style.background = job.status === 'failed' ? '#d92d20' : '#12b76a';
+    attempt.textContent = job.attempt ? `${job.attempt} / ${job.max_attempts}` : '—';
     workerProcess.textContent = `${job.worker_instance} · PID ${job.worker_pid}`;
 
     if (job.status === 'completed') {
         result.textContent = JSON.stringify(job.result, null, 2);
         button.disabled = false;
+        failureButton.disabled = false;
+    }
+
+    if (job.status === 'retrying') {
+        result.textContent = `${job.error}\nMessenger conserve le message et programmera une nouvelle tentative.`;
+    }
+
+    if (job.status === 'failed') {
+        result.textContent = `${job.error}\nLe message peut maintenant être inspecté ou relancé depuis la file failed.`;
+        button.disabled = false;
+        failureButton.disabled = false;
     }
 }
 
@@ -103,15 +123,21 @@ eventSource.onmessage = event => {
     }
 };
 
-button.addEventListener('click', async () => {
+async function startJob(shouldFail) {
     button.disabled = true;
+    failureButton.disabled = true;
     receivedEvents = 0;
     eventCount.textContent = '0';
     progress.style.width = '0%';
     state.textContent = 'Envoi de la tâche…';
+    attempt.textContent = '—';
     result.textContent = 'La requête HTTP est partie…';
 
-    const response = await fetch('/api/messenger/jobs', {method: 'POST'});
+    const response = await fetch('/api/messenger/jobs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({fail: shouldFail}),
+    });
     const job = await response.json();
     currentJobId = job.job_id;
     document.querySelector('#job-id').textContent = currentJobId;
@@ -121,6 +147,9 @@ button.addEventListener('click', async () => {
         bufferedEvents.get(currentJobId).forEach(displayJob);
         bufferedEvents.delete(currentJobId);
     }
-});
+}
+
+button.addEventListener('click', () => startJob(false));
+failureButton.addEventListener('click', () => startJob(true));
 </script>
 {% endblock %}

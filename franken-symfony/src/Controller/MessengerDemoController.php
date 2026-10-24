@@ -7,6 +7,7 @@ use App\Realtime\MessengerProgressPublisher;
 use App\Service\DemoJobStore;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
@@ -28,8 +29,10 @@ final class MessengerDemoController extends AbstractController
     }
 
     #[Route('/api/messenger/jobs', name: 'app_messenger_create_job', methods: ['POST'])]
-    public function create(MessageBusInterface $bus, DemoJobStore $jobStore): JsonResponse
+    public function create(Request $request, MessageBusInterface $bus, DemoJobStore $jobStore): JsonResponse
     {
+        $payload = json_decode($request->getContent(), true);
+        $shouldFail = is_array($payload) && true === ($payload['fail'] ?? false);
         $jobId = bin2hex(random_bytes(8));
         $httpInstance = gethostname() ?: 'instance-http-inconnue';
         $httpPid = getmypid();
@@ -39,10 +42,11 @@ final class MessengerDemoController extends AbstractController
             'progress' => 0,
             'http_instance' => $httpInstance,
             'http_pid' => $httpPid,
+            'should_fail' => $shouldFail,
             'message' => 'Tâche placée dans la file Messenger.',
         ]);
 
-        $bus->dispatch(new GenerateDemoReport($jobId, $httpInstance, $httpPid));
+        $bus->dispatch(new GenerateDemoReport($jobId, $httpInstance, $httpPid, $shouldFail));
 
         return $this->json([
             'accepted' => true,

@@ -31,6 +31,12 @@ final readonly class GenerateDemoReportHandler
         $this->jobStore->write($message->jobId, $runningJob);
         $this->progressPublisher->publish($runningJob);
 
+        if ($message->shouldFail) {
+            usleep(500_000);
+
+            throw new \RuntimeException('Erreur volontaire : génération du rapport impossible.');
+        }
+
         sleep(3);
 
         $completedJob = [

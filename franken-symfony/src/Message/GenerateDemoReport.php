@@ -8,6 +8,7 @@ final readonly class GenerateDemoReport
         public string $jobId,
         public string $httpInstance,
         public int $httpPid,
+        public bool $shouldFail = false,
     ) {
     }
 }

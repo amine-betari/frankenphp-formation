@@ -170,7 +170,7 @@ La page <http://localhost:8384/mercure-private> relie Symfony Security à Mercur
 Le service `messenger-worker` consomme la file Doctrine `async` sans exposer de port web. Les applications classique et Worker peuvent toutes les deux produire une tâche ; le même consommateur l'exécute en arrière-plan.
 
 - <http://localhost:8384/messenger-demo> consulte l'état toutes les 500 ms par polling ;
-- <http://localhost:8384/messenger-mercure-demo> reçoit `running` et `completed` directement avec Mercure.
+- <http://localhost:8384/messenger-mercure-demo> reçoit `running`, `completed`, `retrying` et `failed` directement avec Mercure. Un second bouton permet de provoquer une erreur et d'observer les retries.
 
 ```text
 Requête HTTP → file Messenger → Worker Messenger → Mercure → navigateur
