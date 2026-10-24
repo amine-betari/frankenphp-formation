@@ -220,6 +220,7 @@ docker compose exec symfony-classic php bin/console debug:router
 5. [Symfony et Mercure : synchroniser un catalogue de produits en temps réel](https://www.abetari.com/symfony-mercure-catalogue-produits-temps-reel/)
 6. [Symfony et Mercure : sécuriser des notifications privées avec JWT](https://www.abetari.com/symfony-mercure-notifications-privees-jwt/)
 7. [Symfony Messenger et Mercure : suivre un traitement en arrière-plan sans polling](https://www.abetari.com/symfony-messenger-mercure-progression-sans-polling/)
+8. [Symfony Messenger : retries, file failed et suivi en temps réel avec Mercure](https://www.abetari.com/symfony-messenger-retries-file-failed-mercure/)
 
 La suite de la série est organisée dans la [feuille de route](docs/ROADMAP.md).
 
